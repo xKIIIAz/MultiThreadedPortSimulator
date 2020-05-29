@@ -3,7 +3,6 @@ package Port;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Port {
@@ -26,8 +25,12 @@ public class Port {
     public int getPlace() {
         //here ship waits for a place to free
         while(true) {
-            //System.out.println("Trying to find a quay...");
             for (int i = 0; i < quaysAvailable; i++) {
+                try {
+                    Thread.sleep(1);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
                 if (quayList.get(i).tryLock()) {
                     return i;
                 }
@@ -35,13 +38,15 @@ public class Port {
         }
     }
     public void getTugs(int amtOfTugsNeeded) {
-        //System.out.println("Trying to find tugs...");
         //here ship tries to accquire enough amount of tugs
         try {
             tugs.acquire(amtOfTugsNeeded);
         }catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+    public int getTugsAvailable() {
+        return tugs.availablePermits();
     }
     public void releaseTugs(int amtOfTugsNeeded) {
         tugs.release(amtOfTugsNeeded);

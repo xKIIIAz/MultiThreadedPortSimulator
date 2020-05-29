@@ -1,26 +1,21 @@
 package Port;
 
-import javax.swing.*;
-import java.awt.*;
-import java.beans.IntrospectionException;
+import javax.swing.JLabel;
+import javax.swing.ImageIcon;
 import java.util.Random;
 
 public class Ship implements Runnable {
-    private boolean czyNaNabrzezu = false;
-    private boolean czyNaMorzu = true;
-    private int iteracji;
-    private int czasPlywania;
-    private int czasPostoju;    //to bedzie rand; moze uogolnie do czasu symulacji po prostu
     private ImageIcon imageOnSea;
     private ImageIcon imageDocked;
     private ImageIcon imageTugged;
-    private volatile JLabel jLabel; //konieczne ze wzgledu
+    private volatile JLabel jLabel;
     private volatile String state = "onSea";
     private Random random;
     private int variantOfShip;
     private int countOfTugsRequired;
     private Port port;
     private String shipName = "";
+    private volatile boolean paused = false;
 
     private Simulation simulation;
     private LoggerPanel loggerPanel;
@@ -58,24 +53,30 @@ public class Ship implements Runnable {
         loggerPanel.println(shipName + ": pływam na morzu.");
         doYourThingOnSea();
         for(int i = 0; i < iterationsCount[simulationSpeed]; i++) {
+            checkPaused();
             myPlace = port.getPlace();
             loggerPanel.println(shipName + ": znaleziono miejsce na przystani.");
             loggerPanel.println(shipName + ": oczekuję na holowniki, aby móc przybić do portu.");
+            checkPaused();
             port.getTugs(countOfTugsRequired);
             loggerPanel.println(shipName + ": uzyskano zgodę na przybicie do portu i następującą liczbę holowników: " + countOfTugsRequired);
+            checkPaused();
             loggerPanel.println(shipName + ": trwa holowanie.");
             beTugged();
+            checkPaused();
             loggerPanel.println(shipName + ": holowanie zakończone.");
             loggerPanel.println(shipName + ": zwalniam następującą liczbę holowników: " + countOfTugsRequired);
             port.releaseTugs(countOfTugsRequired);
             loggerPanel.println(shipName + ": jestem w porcie.");
             doYourThingAtPort();
+            checkPaused();
             loggerPanel.println(shipName + ": czas opuścić port.");
             loggerPanel.println(shipName + ": oczekuję na holowniki, aby móc odbić z portu.");
             port.getTugs(countOfTugsRequired);
             loggerPanel.println(shipName + ": uzyskano zgodę na odbicie z portu i następującą liczbę holowników: " + countOfTugsRequired);
             loggerPanel.println(shipName + ": trwa holowanie.");
             beTugged();
+            checkPaused();
             loggerPanel.println(shipName + ": holowanie zakończone.");
             loggerPanel.println(shipName + ": zwalniam następującą liczbę holowników: " + countOfTugsRequired);
             port.releaseTugs(countOfTugsRequired);
@@ -85,7 +86,15 @@ public class Ship implements Runnable {
         }
         simulation.addToFinished();
     }
-
+    private void checkPaused() {
+        while (paused) {
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
     private void beTugged() {
         state = "tugged";
         setjLabel();
@@ -151,6 +160,12 @@ public class Ship implements Runnable {
         }
         jLabel.setHorizontalTextPosition(JLabel.CENTER);
         jLabel.setVerticalTextPosition(JLabel.BOTTOM);
+    }
+    public void pause() {
+        paused = true;
+    }
+    public void resume() {
+        paused = false;
     }
     public String getState() {
         return state;

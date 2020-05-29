@@ -1,6 +1,7 @@
 package Port;
 
-import javax.swing.*;
+import javax.swing.JPanel;
+import javax.swing.BoxLayout;
 
 public class RightPanel extends JPanel {
     public SimulationPanel simPanel;
@@ -11,8 +12,5 @@ public class RightPanel extends JPanel {
         log = new LoggerPanel();
         add(simPanel);
         add(log);
-    }
-    public LoggerPanel getLogger() {
-        return log;
     }
 }

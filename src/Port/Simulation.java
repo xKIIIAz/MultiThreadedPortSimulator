@@ -5,13 +5,15 @@ import java.util.ArrayList;
 
 public class Simulation implements Runnable {
 
-    private boolean started;
+    private boolean started, paused;
     private volatile boolean update;
     private ArrayList<Thread> shipBrains;
     private ArrayList<Ship> ships;
     private SimulationPanel simulationPanel;
     private LoggerPanel loggerPanel;
     private MenuPanel menuPanel;
+    private InterfaceListener interfaceListener;
+    private Port port;
     private volatile int countOfAllTugsRequired;
     private int minimumTugsRequired;
     private int tugsRequested;
@@ -23,9 +25,11 @@ public class Simulation implements Runnable {
                                 "Veronica", "Lana", "Calypso", "Gaia", "Hebe",
                                 "Hera", "Thalia", "Selene", "Rhea", "Pola"};
     private volatile int finishedSimulations;
+    private volatile boolean pause, start;
 
     public Simulation(SimulationPanel simulationPanel, LoggerPanel loggerPanel, MenuPanel menuPanel) {
         started = false;
+        pause = false;
         ships = new ArrayList<Ship>();
         shipBrains = new ArrayList<>();
         this.simulationPanel = simulationPanel;
@@ -42,7 +46,7 @@ public class Simulation implements Runnable {
         started = true;
         loggerPanel.println("Symulator : Ustawiam ilosc przystani w porcie: " + quaysRequested);
         loggerPanel.println("Symulator : Ustawiam ilość holowników w porcie: " + tugsRequested);
-        Port port = new Port(tugsRequested, quaysRequested);
+        this.port = new Port(tugsRequested, quaysRequested);
         for (Ship s: ships) {
             s.setPort(port);
             s.setSimulationSpeed(simulationSpeed);
@@ -57,16 +61,41 @@ public class Simulation implements Runnable {
             }catch (InterruptedException e) {
                 e.printStackTrace();
             }
+
             //jezeli jeszcze wszystkie nie skonczyly to nasluchuj na prosby aktualizacji panelu
             if(update) {
                 update = false;
                 repaintPanel();
                 updateInfoPanel();
             }
+            if(pause) {
+                pause = false;
+                paused = true;
+                started = false;
+                pauseShips();
+            }
+            if(start) {
+                start = false;
+                paused = false;
+                started = true;
+                resumeShips();
+            }
         }
         this.finishedSimulations = 0;
         started = false;
+        paused = false;
         loggerPanel.println("Symulator : Zakończono symulację.");
+        interfaceListener.pokeCheck();
+    }
+    private void pauseShips() {
+        for( Ship s: ships) {
+            s.pause();
+        }
+    }
+    private void resumeShips() {
+        for( Ship s: ships) {
+            s.resume();
+        }
     }
     public synchronized void addToFinished() {
         //function incrementing counter of ships that finished the simulation
@@ -75,6 +104,7 @@ public class Simulation implements Runnable {
     public boolean isStarted() {
         return started;
     }
+    public boolean isPaused() { return paused; }
 
 
     public void addShip() {
@@ -107,17 +137,12 @@ public class Simulation implements Runnable {
         loggerPanel.println("Usunięto statek: " + shipNames[currentIndex]);
     }
     public void stopAndRemoveAll() {
-        /*for (Thread t: shipBrains) {
 
-        }*/
-        //stop threads!!!!
         ships.clear();
         minimumTugsRequired = 0;
         countOfAllTugsRequired = 0;
     }
     private void repaintPanel() {
-        while(simulationPanel.getRepainting()) { }  //czekaj az skonczy malowac
-
         simulationPanel.clearPanel();
         for(Ship s : ships) {
             simulationPanel.addShipRepresentation(s.getLabel());
@@ -126,10 +151,7 @@ public class Simulation implements Runnable {
     }
 
     private void updateInfoPanel() {
-        menuPanel.updateInfoPanel(getShipsOnSea(),getShipsDocked(),getShipsTugged());
-    }
-    public int getShipsCount() {
-        return ships.size();
+        menuPanel.updateInfoPanel(port.getTugsAvailable(), getShipsOnSea(),getShipsDocked(),getShipsTugged());
     }
     public int getCountOfAllTugsRequired() {
         return countOfAllTugsRequired;
@@ -167,7 +189,15 @@ public class Simulation implements Runnable {
         }
         return count;
     }
-
+    public void setInterfaceListener(InterfaceListener interfaceListener) {
+        this.interfaceListener = interfaceListener;
+    }
+    public void setPause() {
+        pause = true;
+    }
+    public void setResume() {
+        start = true;
+    }
     public void setSimulationSpeed(int simulationSpeed) {
         this.simulationSpeed = simulationSpeed;
     }

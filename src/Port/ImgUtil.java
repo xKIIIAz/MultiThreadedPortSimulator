@@ -1,10 +1,6 @@
 package Port;
 
-import java.awt.Image;
-import javax.imageio.ImageIO;
 import javax.swing.*;
-import java.io.File;
-import java.io.IOException;
 import java.util.HashMap;
 
 public class ImgUtil {

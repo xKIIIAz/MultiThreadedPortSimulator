@@ -7,10 +7,8 @@ import java.util.ArrayList;
 public class SimulationPanel extends JPanel {
     int WIDTH = 800;
     int HEIGHT = 470;
-    Graphics2D graphics2D;
-    volatile ArrayList<JLabel> representations; // volatile konieczne ze względu na możliwość przeszkodzenia w rysowaniu elementów
-    volatile Color bgColor;
-    private volatile boolean repainting = false;
+    ArrayList<JLabel> representations;
+    Color bgColor;
 
     public SimulationPanel() {
         representations = new ArrayList<JLabel>();
@@ -32,18 +30,13 @@ public class SimulationPanel extends JPanel {
         representations.clear();
     }
     public void panelRepaint() {
-        repainting = true;
         revalidate();
         repaint();
-        repainting = false;
     }
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         g.setColor(bgColor);
         g.fillRect(0,0,WIDTH,HEIGHT);
-    }
-    public boolean getRepainting() {
-        return repainting;
     }
 }
 

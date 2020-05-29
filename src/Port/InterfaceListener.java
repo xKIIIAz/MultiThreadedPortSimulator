@@ -4,15 +4,13 @@ public class InterfaceListener implements Runnable{
     private volatile boolean check;
     private volatile boolean start;
     public volatile boolean reset;
-    private boolean menuActivated;
+    public volatile boolean pause;
 
     private int shipCount;
     private int tugCount;
     private int quayCount;
     private int simulationSpeed;
     private Thread simulationThread;
-
-    private boolean valuesSet = false;
     private MenuPanel menuPanel;
     private LoggerPanel loggerPanel;
     private SimulationPanel simulationPanel;
@@ -23,10 +21,10 @@ public class InterfaceListener implements Runnable{
         this.loggerPanel = loggerPanel;
         this.simulationPanel = simulationPanel;
         simulation = new Simulation(simulationPanel, loggerPanel, menuPanel);
-        menuActivated = false;
         check = false;
         start = false;
         reset = false;
+        pause = false;
         shipCount = 0;
         tugCount = 0;
         quayCount = 0;
@@ -34,51 +32,73 @@ public class InterfaceListener implements Runnable{
 
     @Override
     public void run() {
-        if(!menuActivated) {        //it is not necessary while we start InterfaceListener only once
-            menuActivated = true;
-            menuPanel.setInterfaceListener(this);
-        }
+        menuPanel.setInterfaceListener(this);
+        simulation.setInterfaceListener(this);
         while(true) {
             listenIfChecked();
             listenIfStart();
             listenIfReset();
+            listenIfPause();
             try{
-                Thread.sleep(30);
+                Thread.sleep(50);
             }catch (InterruptedException e ) {
                 e.printStackTrace();
             }
         }
     }
+
     private void listenIfChecked() {
         if(check) {
             check = false;
-            updateShipsAndSpinners();
-            updateInfoValues();
+            if(!simulation.isStarted()){
+                updateShipsAndSpinners();
+                updateInfoValues();
+            }
         }
     }
     private void listenIfStart() {
         if(start) {
             start = false;
-            if(ableToStart()) {
-                simulation.setTugsRequested(tugCount);
-                simulation.setQuaysRequested(quayCount);
-                simulationThread = new Thread(simulation);
-                simulationThread.start();
+            if(simulation.isStarted()) {
+                loggerPanel.println("***********************************************************************");
+                loggerPanel.println("*Symulacja już trwa! Spróbuj ją zatrzymać za pomocą przycisku PAUSE.*");
+                loggerPanel.println("***********************************************************************");
+            }else {
+                if(simulation.isPaused()) {
+                    simulation.setResume();
+                }else if(ableToStart()){
+                    simulation.setTugsRequested(tugCount);
+                    simulation.setQuaysRequested(quayCount);
+                    simulationThread = new Thread(simulation);
+                    simulationThread.start();
+                }else {
+                    loggerPanel.println("Symulacja : Nie udało się rozpocząć symulacji.");
+                }
+            }
+        }
+    }
+    private void listenIfPause() {
+        if(pause) {
+            pause = false;
+            if(!simulation.isStarted()) {
+                loggerPanel.println("*******************************************************************");
+                loggerPanel.println("*                  Symulacja już jest zatrzymana.                 *");
+                loggerPanel.println("*******************************************************************");
             }
             else {
-                loggerPanel.println("Symulacja : Nie udało się rozpocząć symulacji.");
+                simulation.setPause();
             }
         }
     }
     private void listenIfReset() {
         if(reset) {
             reset = false;
-            if(!simulation.isStarted()){
+            if(!(simulation.isStarted() || simulation.isPaused())) {
                 resetPanels();
             }
             else {
                 loggerPanel.println("*******************************************************************");
-                loggerPanel.println("*            SYMULACJA NADAL TRWA, ZACZEKAJ AŻ SIĘ ZAKOŃCZY!      *");
+                loggerPanel.println("*            SYMULACJA NADAL TRWA, MUSI DOBIEC DO KOŃCA!          *");
                 loggerPanel.println("*******************************************************************");
             }
         }
@@ -92,12 +112,6 @@ public class InterfaceListener implements Runnable{
             loggerPanel.println("*******************************************************************");
             return false;
         }
-        if(simulation.isStarted()) {
-            loggerPanel.println("***********************************************************************");
-            loggerPanel.println("*Symulacja nadal trwa! Spróbuj ją zatrzymać za pomocą przycisku RESET.*");
-            loggerPanel.println("***********************************************************************");
-            return false;
-        }
         return true;
     }
     private void resetPanels() {
@@ -105,7 +119,7 @@ public class InterfaceListener implements Runnable{
         shipCount = 0;
         tugCount = 0;
         quayCount = 0;
-        menuPanel.updateInfoPanel(0,0,0);
+        menuPanel.updateInfoPanel(0, 0,0,0);
         simulationPanel.clearPanel();
         simulationPanel.panelRepaint();
         loggerPanel.logPrompt.setText("");
@@ -147,21 +161,19 @@ public class InterfaceListener implements Runnable{
     }
     private void updateInfoValues() {
         //function connecting information between simulation and MenuPanel's infoPanel
-        menuPanel.updateInfoPanel( simulation.getShipsOnSea(), simulation.getShipsDocked(), simulation.getShipsTugged());
+        menuPanel.updateInfoPanel( tugCount, simulation.getShipsOnSea(), simulation.getShipsDocked(), simulation.getShipsTugged());
     }
-    private void startSimulation() {
 
+    public void pokePause() {
+        pause = true;
     }
-    private void resetSimulation() {
-
-    }
-    public synchronized void pokeCheck(){
+    public void pokeCheck(){
         check = true;
     }
-    public synchronized void pokeReset() {
+    public void pokeReset() {
         reset = true;
     }
-    public synchronized void pokeStart() {
+    public void pokeStart() {
         start = true;
     }
 }
