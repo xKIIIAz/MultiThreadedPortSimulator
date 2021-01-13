@@ -10,6 +10,7 @@ This project is an effect of concurrent programming training - each ship represe
 - the sum of tugs available at port is lesser than tugs required for all ships to dock at once
 
 Values above can be freely modified via graphical interface written in Swing. Below is a demonstration of GUI of a program.
+
 ![gui](./ships.png)
 
 ## Additional info
