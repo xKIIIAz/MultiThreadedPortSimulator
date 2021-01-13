@@ -1,7 +1,7 @@
 ﻿# Multi Threaded Ship Port Simulator
 
 ## General info
-This project is an effect of concurrent programming training - each ship represents separate thread. Ships are trying to moor to the Port and then spend there some time. After a random amount of time for ship has passed, it departs and spend time on sea. This process repeats specified amount of iterations. There is limited amount of quays and tugs. Each ship uses specified amount of tugs to dock and depart from Port. 
+This project is an effect of concurrent programming training - each ship represents separate thread. Ships are trying to moor to the Port and then spend there some time. After a random amount of time for ship has passed, it departs and spends time on sea. This process repeats specified amount of iterations. There is limited amount of quays and tugs. Each ship uses specified amount of tugs to dock and depart from Port. 
 
 ## Simulation assumptions
 - there are n ships available (0 < n <= 25)
